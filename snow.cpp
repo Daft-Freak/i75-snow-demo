@@ -67,7 +67,7 @@ int main() {
             snowflake.y_vel += 8; // gravity
 
             // dead if fell to the bottom
-            if(snowflake.y >> 16 >= screen_width)
+            if(snowflake.y >> 16 >= screen_height)
             {
                 if(first_dead == max_particles)
                     first_dead = i;
