@@ -177,7 +177,7 @@ int main() {
         {
             auto &snowflake = snow[i];
 
-            auto putPixel = [&hub75](int x, int y, uint8_t g)
+            auto putPixel = [](int x, int y, uint8_t g)
             {
                 if(x < 0 || y < 0 || x >= screen_width || y >= screen_height)
                     return;
