@@ -9,8 +9,17 @@
 
 #include "hub75.hpp"
 
+#ifdef MATRIX_2X1
+const int screen_width = 64;
+const int screen_height = 32;
+
+const int max_particles = 800;
+#else
 const int screen_width = 32;
 const int screen_height = 32;
+
+const int max_particles = 400;
+#endif
 
 static Hub75 hub75(screen_width, screen_height, nullptr);
 
@@ -31,7 +40,6 @@ struct Particle
 static int wind = 0;
 static int last_wind_change = 1;
 
-const int max_particles = 400;
 static Particle snow[max_particles]{};
 
 static int active_snow = 0;
@@ -207,6 +215,7 @@ int main() {
             }
         }
 
+        // draw snow cover
         for(int y = 0; y < max_snow_depth; y++)
         {
             for(int x = 0; x < screen_width ; x++)

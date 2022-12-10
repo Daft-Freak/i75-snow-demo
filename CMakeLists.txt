@@ -8,6 +8,8 @@ project(snow-demo)
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_CXX_STANDARD 17)
 
+option(MATRIX_2X1 "2x1 Matrix (64x32)" OFF)
+
 # Initialize the SDK
 pico_sdk_init()
 
@@ -26,3 +28,8 @@ target_link_libraries(${OUTPUT_NAME}
     pico_multicore
     hub75
 )
+
+
+if(MATRIX_2X1)
+    target_compile_definitions(${OUTPUT_NAME} PRIVATE -DMATRIX_2X1)
+endif()
