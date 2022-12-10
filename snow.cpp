@@ -119,8 +119,12 @@ int main() {
         }
 
         // add new snow particle
-        spawn_timer--;
-        if(active_snow < max_particles && spawn_timer <= 0)
+        if(active_snow < max_particles)
+            spawn_timer -= (screen_width * screen_height) / (32 * 32); // spawn faster the larger the display
+        else
+            spawn_timer = spawn_timer;
+
+        if(spawn_timer <= 0)
         {
             auto &snowflake = snow[active_snow++];
     
@@ -135,11 +139,11 @@ int main() {
             snowflake.col = colDistribution(randomGenerator);
             snowflake.dead = false;
 
+            spawn_timer += spawn_time;
+
             // adjust time
             spawn_time += std::uniform_int_distribution(-3, 3 - spawn_time / 40)(randomGenerator);
             spawn_time = std::max(1, std::min(60, spawn_time));
-
-            spawn_timer = spawn_time;
         }
 
         // adjust wind
