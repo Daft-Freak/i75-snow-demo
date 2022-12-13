@@ -14,17 +14,19 @@ const int screen_width = 64;
 const int screen_height = 64;
 
 const int max_particles = 1600;
-
+const int spawn_wind_adjust = 8;
 #elif defined(MATRIX_2X1)
 const int screen_width = 64;
 const int screen_height = 32;
 
 const int max_particles = 800;
+const int spawn_wind_adjust = 2;
 #else
 const int screen_width = 32;
 const int screen_height = 32;
 
 const int max_particles = 400;
+const int spawn_wind_adjust = 2;
 #endif
 
 #ifdef MATRIX_2X2
@@ -149,8 +151,8 @@ int main() {
         if(spawn_timer <= 0)
         {
             auto &snowflake = snow[active_snow++];
-    
-            snowflake.x = std::uniform_int_distribution(std::min(0, -wind * 2), screen_width + std::max(0, -wind * 2))(randomGenerator) << 16;
+
+            snowflake.x = std::uniform_int_distribution(std::min(0, -wind * spawn_wind_adjust), screen_width + std::max(0, -wind * spawn_wind_adjust))(randomGenerator) << 16;
             snowflake.y = -8;
 
             // a bit of initial movement
