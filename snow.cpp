@@ -14,18 +14,21 @@ const int screen_width = 64;
 const int screen_height = 64;
 
 const int max_particles = 1600;
+const int max_snow_depth = 6;
 const int spawn_wind_adjust = 8;
 #elif defined(MATRIX_2X1)
 const int screen_width = 64;
 const int screen_height = 32;
 
 const int max_particles = 800;
+const int max_snow_depth = 4;
 const int spawn_wind_adjust = 2;
 #else
 const int screen_width = 32;
 const int screen_height = 32;
 
 const int max_particles = 400;
+const int max_snow_depth = 4;
 const int spawn_wind_adjust = 2;
 #endif
 
@@ -58,7 +61,6 @@ static int active_snow = 0;
 static int spawn_timer = 0, spawn_time = 30;
 static int melt_timer = 0, melt_time = 16;
 
-const int max_snow_depth = 4;
 static uint8_t snow_cover[screen_width * max_snow_depth]{};
 
 static void map_coord(unsigned int &x, unsigned int &y)
