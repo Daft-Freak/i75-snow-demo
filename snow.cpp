@@ -9,7 +9,13 @@
 
 #include "hub75.hpp"
 
-#ifdef MATRIX_2X1
+#ifdef MATRIX_2X2
+const int screen_width = 64;
+const int screen_height = 64;
+
+const int max_particles = 1600;
+
+#elif defined(MATRIX_2X1)
 const int screen_width = 64;
 const int screen_height = 32;
 
@@ -21,7 +27,11 @@ const int screen_height = 32;
 const int max_particles = 400;
 #endif
 
+#ifdef MATRIX_2X2
+static Hub75 hub75(screen_width * 2, 32, nullptr);
+#else
 static Hub75 hub75(screen_width, screen_height, nullptr);
+#endif
 
 void __isr dma_complete() {
     hub75.dma_complete();
@@ -48,6 +58,18 @@ static int melt_timer = 0, melt_time = 16;
 
 const int max_snow_depth = 4;
 static uint8_t snow_cover[screen_width * max_snow_depth]{};
+
+static void map_coord(unsigned int &x, unsigned int &y)
+{
+#ifdef MATRIX_2X2
+    // remap for matrix layout
+    if(y >= 32)
+    {
+        y = 31 - (y - 32);
+        x = (63 - x) + 64;
+    }
+#endif
+}
 
 int main() {
     hub75.start(dma_complete);
@@ -189,12 +211,12 @@ int main() {
         {
             auto &snowflake = snow[i];
 
-            auto putPixel = [](int x, int y, uint8_t g)
+            auto putPixel = [](unsigned int x, unsigned int y, uint8_t g)
             {
                 if(x < 0 || y < 0 || x >= screen_width || y >= screen_height)
                     return;
 
-                int off = (x + y * screen_width) * 4;
+                map_coord(x, y);
 
                 hub75.set_color(x, y, {g, g, g});
             };
@@ -224,10 +246,13 @@ int main() {
         {
             for(int x = 0; x < screen_width ; x++)
             {
-                int scrY = y + (screen_height - max_snow_depth);
-                int off = (x + (scrY % (screen_height / 2)) * screen_width) * 2;
+                unsigned int scrY = y + (screen_height - max_snow_depth);
+                unsigned int scrX = x;
+                map_coord(scrX, scrY);
 
-                if(scrY >= screen_height / 2)
+                int off = (scrX + (scrY % (hub75.height / 2)) * hub75.width) * 2;
+
+                if(scrY >= hub75.height / 2)
                     off++;
                 
                 uint8_t g = snow_cover[x + y * screen_width];
@@ -235,9 +260,8 @@ int main() {
                 // snow already here
                 if((hub75.front_buffer[off].color & 0x3FF) > GAMMA_10BIT[g]) 
                     continue;
-    
 
-                hub75.set_color(x, scrY, {g, g, g});
+                hub75.set_color(scrX, scrY, {g, g, g});
             }
         }
 

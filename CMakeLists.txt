@@ -9,6 +9,7 @@ set(CMAKE_C_STANDARD 11)
 set(CMAKE_CXX_STANDARD 17)
 
 option(MATRIX_2X1 "2x1 Matrix (64x32)" OFF)
+option(MATRIX_2X2 "2x2 Matrix (64x64)" OFF)
 
 # Initialize the SDK
 pico_sdk_init()
@@ -32,4 +33,8 @@ target_link_libraries(${OUTPUT_NAME}
 
 if(MATRIX_2X1)
     target_compile_definitions(${OUTPUT_NAME} PRIVATE -DMATRIX_2X1)
+endif()
+
+if(MATRIX_2X2)
+    target_compile_definitions(${OUTPUT_NAME} PRIVATE -DMATRIX_2X2)
 endif()
