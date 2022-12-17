@@ -14,7 +14,7 @@ option(MATRIX_2X2 "2x2 Matrix (64x64)" OFF)
 # Initialize the SDK
 pico_sdk_init()
 
-include(drivers/hub75/hub75)
+include(drivers/hub75_legacy/hub75)
 
 set(OUTPUT_NAME interstate75_snow)
 add_executable(${OUTPUT_NAME} snow.cpp)
@@ -27,7 +27,7 @@ pico_add_extra_outputs(${OUTPUT_NAME})
 target_link_libraries(${OUTPUT_NAME}
     pico_stdlib
     pico_multicore
-    hub75
+    hub75_legacy
 )
 
 
