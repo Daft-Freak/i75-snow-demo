@@ -27,6 +27,7 @@ pico_add_extra_outputs(${OUTPUT_NAME})
 target_link_libraries(${OUTPUT_NAME}
     pico_stdlib
     pico_multicore
+    pico_rand
     hub75
 )
 

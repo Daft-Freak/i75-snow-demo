@@ -4,6 +4,7 @@
 #include <random>
 
 #include "pico/stdlib.h"
+#include "pico/rand.h"
 
 //#include "common/pimoroni_common.hpp"
 
@@ -83,7 +84,7 @@ static void map_coord(int &x, int &y)
 int main() {
     hub75.start(dma_complete);
 
-    std::mt19937 randomGenerator(0xDAF7);
+    std::mt19937 randomGenerator(get_rand_32());
     std::uniform_int_distribution sizeDistribution(0, 3), 
                                   velDistribution(-1024, 1024),
                                   colDistribution(0x40, 0xFF);
