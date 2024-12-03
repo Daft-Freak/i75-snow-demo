@@ -36,10 +36,12 @@ const int melt_time = 16;
 #endif
 
 #ifdef MATRIX_2X2
-static Hub75 hub75(screen_width * 2, 32, nullptr);
+static pimoroni::Hub75 hub75(screen_width * 2, 32, nullptr);
 #else
-static Hub75 hub75(screen_width, screen_height, nullptr);
+static pimoroni::Hub75 hub75(screen_width, screen_height, nullptr);
 #endif
+
+static pimoroni::PicoGraphics_PenRGB888 graphics(hub75.width, hub75.height, nullptr);
 
 void __isr dma_complete() {
     hub75.dma_complete();
@@ -66,7 +68,7 @@ static int melt_timer = 0;
 
 static uint8_t snow_cover[screen_width * max_snow_depth]{};
 
-static void map_coord(unsigned int &x, unsigned int &y)
+static void map_coord(int &x, int &y)
 {
 #ifdef MATRIX_2X2
     // remap for matrix layout
@@ -212,20 +214,24 @@ int main() {
 
         // drawing
 
-        hub75.background = Pixel();
+        //hub75.background = pimoroni::Pixel();
+
+        graphics.set_pen(0, 0, 0);
+        graphics.clear();
 
         for(int i = 0; i < active_snow; i++)
         {
             auto &snowflake = snow[i];
 
-            auto putPixel = [](unsigned int x, unsigned int y, uint8_t g)
+            auto putPixel = [](int x, int y, uint8_t g)
             {
                 if(x < 0 || y < 0 || x >= screen_width || y >= screen_height)
                     return;
 
                 map_coord(x, y);
 
-                hub75.set_color(x, y, {g, g, g});
+                graphics.set_pen(g, g, g);
+                graphics.pixel({x, y});
             };
 
             int sx = snowflake.x >> 16;
@@ -253,8 +259,8 @@ int main() {
         {
             for(int x = 0; x < screen_width ; x++)
             {
-                unsigned int scrY = y + (screen_height - max_snow_depth);
-                unsigned int scrX = x;
+                int scrY = y + (screen_height - max_snow_depth);
+                int scrX = x;
                 map_coord(scrX, scrY);
 
                 int off = (scrX + (scrY % (hub75.height / 2)) * hub75.width) * 2;
@@ -265,14 +271,15 @@ int main() {
                 uint8_t g = snow_cover[x + y * screen_width];
 
                 // snow already here
-                if((hub75.front_buffer[off].color & 0x3FF) > GAMMA_10BIT[g]) 
+                if(((uint8_t *)graphics.frame_buffer)[(scrX + scrY * graphics.bounds.w) * 4] > g) 
                     continue;
 
-                hub75.set_color(scrX, scrY, {g, g, g});
+                graphics.set_pen(g, g, g);
+                graphics.pixel({scrX, scrY});
             }
         }
 
-        hub75.flip(false);
+        hub75.update(&graphics);
 
         auto end = get_absolute_time();
 
