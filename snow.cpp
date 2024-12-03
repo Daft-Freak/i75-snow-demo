@@ -263,11 +263,6 @@ int main() {
                 int scrY = y + (screen_height - max_snow_depth);
                 int scrX = x;
                 map_coord(scrX, scrY);
-
-                int off = (scrX + (scrY % (hub75.height / 2)) * hub75.width) * 2;
-
-                if(scrY >= hub75.height / 2)
-                    off++;
                 
                 uint8_t g = snow_cover[x + y * screen_width];
 
