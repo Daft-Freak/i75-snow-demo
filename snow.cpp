@@ -6,7 +6,9 @@
 #include "pico/stdlib.h"
 #include "pico/rand.h"
 
-//#include "common/pimoroni_common.hpp"
+#ifdef WIFI_ENABLED
+#include "pico/cyw43_arch.h"
+#endif
 
 #include "hub75.hpp"
 
@@ -82,7 +84,25 @@ static void map_coord(int &x, int &y)
 }
 
 int main() {
+    stdio_init_all();
+
     hub75.start(dma_complete);
+
+#ifdef WIFI_ENABLED
+    if(cyw43_arch_init()) {
+        printf("failed to initialise\n");
+        return 1;
+    }
+
+    cyw43_arch_enable_sta_mode();
+
+    if(cyw43_arch_wifi_connect_timeout_ms(WIFI_SSID, WIFI_PASSWORD, CYW43_AUTH_WPA2_AES_PSK, 10000)) {
+        printf("failed to connect\n");
+        return 1;
+    }
+
+    printf("wifi connected\n");
+#endif
 
     std::mt19937 randomGenerator(get_rand_32());
     std::uniform_int_distribution sizeDistribution(0, 3), 
