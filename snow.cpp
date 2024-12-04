@@ -134,7 +134,7 @@ int main() {
                         y++;
 
                         // gravity
-                        while(y + 1 < max_snow_depth - 1 && !snow_cover[x + (y + 1) * screen_width] <= threshold)
+                        while(y + 1 < max_snow_depth - 1 && snow_cover[x + (y + 1) * screen_width] <= threshold)
                             y++;
                     }
 
