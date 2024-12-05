@@ -8,6 +8,7 @@
 
 #ifdef WIFI_ENABLED
 #include "pico/cyw43_arch.h"
+#include "ntp.h"
 #endif
 
 #include "hub75.hpp"
@@ -102,6 +103,10 @@ int main() {
     }
 
     printf("wifi connected\n");
+
+    auto ntpState = ntp_init();
+    if(!ntpState)
+        printf("ntp init failed\n");
 #endif
 
     std::mt19937 randomGenerator(get_rand_32());
@@ -296,6 +301,10 @@ int main() {
         }
 
         hub75.update(&graphics);
+
+#ifdef WIFI_ENABLED
+        ntp_update(ntpState);
+#endif
 
         auto end = get_absolute_time();
 

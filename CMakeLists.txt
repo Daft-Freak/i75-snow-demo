@@ -48,6 +48,7 @@ endif()
 
 if(WIFI_SSID AND WIFI_PASSWORD)
     # assume pico w
+    target_sources(${OUTPUT_NAME} PRIVATE ntp.c)
     target_link_libraries(${OUTPUT_NAME} pico_cyw43_arch_lwip_threadsafe_background)
     target_compile_definitions(${OUTPUT_NAME} PRIVATE
         WIFI_SSID="${WIFI_SSID}"
