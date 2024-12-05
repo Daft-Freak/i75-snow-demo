@@ -3,8 +3,11 @@
 #include <string.h>
 #include <time.h>
 
+#include "hardware/rtc.h"
+
 #include "pico/stdlib.h"
 #include "pico/cyw43_arch.h"
+#include "pico/util/datetime.h"
 
 #include "lwip/dns.h"
 #include "lwip/pbuf.h"
@@ -33,6 +36,11 @@ static void ntp_result(NTP_T* state, int status, time_t *result) {
         struct tm *utc = gmtime(result);
         printf("got ntp response: %02d/%02d/%04d %02d:%02d:%02d\n", utc->tm_mday, utc->tm_mon + 1, utc->tm_year + 1900,
                utc->tm_hour, utc->tm_min, utc->tm_sec);
+
+        // set RTC
+        datetime_t datetime;
+        if(time_to_datetime(*result, &datetime))
+            rtc_set_datetime(&datetime);
     }
 
     if (state->ntp_resend_alarm > 0) {

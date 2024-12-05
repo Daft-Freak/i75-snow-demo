@@ -3,8 +3,11 @@
 #include <cstring>
 #include <random>
 
+#include "hardware/rtc.h"
+
 #include "pico/stdlib.h"
 #include "pico/rand.h"
+#include "pico/util/datetime.h"
 
 #ifdef WIFI_ENABLED
 #include "pico/cyw43_arch.h"
@@ -86,6 +89,11 @@ static void map_coord(int &x, int &y)
 
 int main() {
     stdio_init_all();
+
+    // init RTC
+    rtc_init();
+    datetime_t initTime = {0, 1, 1, 0, 0, 0, 0};
+    rtc_set_datetime(&initTime);
 
     hub75.start(dma_complete);
 
