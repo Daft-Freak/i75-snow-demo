@@ -299,6 +299,10 @@ int main() {
 
         auto end = get_absolute_time();
 
-        sleep_us(1000000 / 60 - absolute_time_diff_us(start, end));
+        const auto targetTime = 1000000 / 60;
+        auto elapsed = absolute_time_diff_us(start, end);
+
+        if(elapsed < targetTime)
+            sleep_us(targetTime - elapsed);
     }
 }
