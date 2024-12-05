@@ -27,7 +27,8 @@ typedef struct NTP_T_ {
 #define NTP_MSG_LEN 48
 #define NTP_PORT 123
 #define NTP_DELTA 2208988800 // seconds between 1 Jan 1900 and 1 Jan 1970
-#define NTP_TEST_TIME (30 * 1000)
+#define NTP_TEST_TIME (60 * 60 * 1000)
+#define NTP_TEST_RETRY_TIME (30 * 1000)
 #define NTP_RESEND_TIME (10 * 1000)
 
 // Called with results of operation
@@ -47,7 +48,12 @@ static void ntp_result(NTP_T* state, int status, time_t *result) {
         cancel_alarm(state->ntp_resend_alarm);
         state->ntp_resend_alarm = 0;
     }
-    state->ntp_test_time = make_timeout_time_ms(NTP_TEST_TIME);
+
+    if(status == 0)
+        state->ntp_test_time = make_timeout_time_ms(NTP_TEST_TIME);
+    else
+        state->ntp_test_time = make_timeout_time_ms(NTP_TEST_RETRY_TIME);
+
     state->dns_request_sent = false;
 }
 
