@@ -93,8 +93,8 @@ static std::tuple<time_t, time_t> calc_sunrise_sunset(time_t time, float lat, fl
     double mean_solar_time = julian_day + 0.0009 - (lng / 360.0);
     double solar_mean_anomaly = std::fmod(357.5291 + 0.98560028 * mean_solar_time, 360.0);
     double solar_mean_anomaly_rad = deg_to_rad(solar_mean_anomaly);
-    double equ_of_Center = 1.9148 * std::sin(solar_mean_anomaly_rad) + 0.02 * std::sin(2.0 * solar_mean_anomaly_rad) + 0.0003 * std::sin(3.0 * solar_mean_anomaly_rad);
-    double ecliptic_longitude = std::fmod(solar_mean_anomaly + equ_of_Center + 180.0 + 102.9372, 360.0);
+    double equ_of_center = 1.9148 * std::sin(solar_mean_anomaly_rad) + 0.02 * std::sin(2.0 * solar_mean_anomaly_rad) + 0.0003 * std::sin(3.0 * solar_mean_anomaly_rad);
+    double ecliptic_longitude = std::fmod(solar_mean_anomaly + equ_of_center + 180.0 + 102.9372, 360.0);
     double ecliptic_longitude_rad = deg_to_rad(ecliptic_longitude);
     double solar_transit = 2451545.0 + mean_solar_time + 0.0053 * std::sin(solar_mean_anomaly_rad) - 0.0069 * std::sin(2.0 * ecliptic_longitude_rad);
     double sin_declination_of_sun = std::sin(ecliptic_longitude_rad) * std::sin(deg_to_rad((23.4397)));
@@ -147,8 +147,8 @@ int main() {
 
     // init RTC
     rtc_init();
-    datetime_t initTime = {0, 1, 1, 0, 0, 0, 0};
-    rtc_set_datetime(&initTime);
+    datetime_t init_time = {0, 1, 1, 0, 0, 0, 0};
+    rtc_set_datetime(&init_time);
 
     hub75.start(dma_complete);
 
@@ -167,15 +167,15 @@ int main() {
 
     printf("wifi connected\n");
 
-    auto ntpState = ntp_init();
-    if(!ntpState)
+    auto ntp_state = ntp_init();
+    if(!ntp_state)
         printf("ntp init failed\n");
 #endif
 
-    std::mt19937 randomGenerator(get_rand_32());
-    std::uniform_int_distribution sizeDistribution(0, 3), 
-                                  velDistribution(-1024, 1024),
-                                  colDistribution(0x40, 0xFF);
+    std::mt19937 random_generator(get_rand_32());
+    std::uniform_int_distribution size_distribution(0, 3), 
+                                  vel_distribution(-1024, 1024),
+                                  col_distribution(0x40, 0xFF);
 
     int sunrise_time_mins = 8 * 60 + 16;
     int sunset_time_mins = 15 * 60 + 41;
@@ -251,26 +251,26 @@ int main() {
         {
             auto &snowflake = snow[active_snow++];
 
-            snowflake.x = std::uniform_int_distribution(std::min(0, -wind * spawn_wind_adjust), screen_width + std::max(0, -wind * spawn_wind_adjust))(randomGenerator) << 16;
+            snowflake.x = std::uniform_int_distribution(std::min(0, -wind * spawn_wind_adjust), screen_width + std::max(0, -wind * spawn_wind_adjust))(random_generator) << 16;
             snowflake.y = -8;
 
             // a bit of initial movement
-            snowflake.x_vel = velDistribution(randomGenerator);
-            snowflake.y_vel = velDistribution(randomGenerator) + 1024; // not up
+            snowflake.x_vel = vel_distribution(random_generator);
+            snowflake.y_vel = vel_distribution(random_generator) + 1024; // not up
 
-            snowflake.size = sizeDistribution(randomGenerator);
-            snowflake.col = colDistribution(randomGenerator);
+            snowflake.size = size_distribution(random_generator);
+            snowflake.col = col_distribution(random_generator);
             snowflake.dead = false;
 
             spawn_timer += spawn_time;
 
             // adjust time
-            spawn_time += std::uniform_int_distribution(-3, 3 - spawn_time / 40)(randomGenerator);
+            spawn_time += std::uniform_int_distribution(-3, 3 - spawn_time / 40)(random_generator);
             spawn_time = std::max(1, std::min(60, spawn_time));
         }
 
         // adjust wind
-        int wind_adj = std::uniform_int_distribution(0, 2)(randomGenerator);
+        int wind_adj = std::uniform_int_distribution(0, 2)(random_generator);
         if(wind_adj == 1) // same direction as last time
             wind += last_wind_change;
         else if(wind_adj == 2) // switch direction
@@ -372,7 +372,7 @@ int main() {
         {
             auto &snowflake = snow[i];
 
-            auto putPixel = [](int x, int y, uint8_t g)
+            auto put_pixel = [](int x, int y, uint8_t g)
             {
                 if(x < 0 || y < 0 || x >= screen_width || y >= screen_height)
                     return;
@@ -391,14 +391,14 @@ int main() {
                 case 0:
                 case 1:
                 case 2:
-                    putPixel(sx, sy, snowflake.col);
+                    put_pixel(sx, sy, snowflake.col);
                     break;
                 case 3:
-                    putPixel(sx, sy, snowflake.col);
-                    putPixel(sx - 1, sy, snowflake.col / 2);
-                    putPixel(sx + 1, sy, snowflake.col / 2);
-                    putPixel(sx, sy - 1, snowflake.col / 2);
-                    putPixel(sx, sy + 1, snowflake.col / 2);
+                    put_pixel(sx, sy, snowflake.col);
+                    put_pixel(sx - 1, sy, snowflake.col / 2);
+                    put_pixel(sx + 1, sy, snowflake.col / 2);
+                    put_pixel(sx, sy - 1, snowflake.col / 2);
+                    put_pixel(sx, sy + 1, snowflake.col / 2);
                     break;
             }
         }
@@ -408,9 +408,9 @@ int main() {
         {
             for(int x = 0; x < screen_width ; x++)
             {
-                int scrY = y + (screen_height - max_snow_depth);
-                int scrX = x;
-                map_coord(scrX, scrY);
+                int scr_y = y + (screen_height - max_snow_depth);
+                int scr_x = x;
+                map_coord(scr_x, scr_y);
                 
                 uint8_t g = snow_cover[x + y * screen_width];
 
@@ -419,26 +419,26 @@ int main() {
 
                 // snow already here
                 // FIXME: this is pretty nasty, especially now that we draw things other than snow
-                if(((uint8_t *)graphics.frame_buffer)[(scrX + scrY * graphics.bounds.w) * 4] > g) 
+                if(((uint8_t *)graphics.frame_buffer)[(scr_x + scr_y * graphics.bounds.w) * 4] > g) 
                     continue;
 
                 graphics.set_pen(g, g, g);
-                graphics.pixel({scrX, scrY});
+                graphics.pixel({scr_x, scr_y});
             }
         }
 
         hub75.update(&graphics);
 
 #ifdef WIFI_ENABLED
-        ntp_update(ntpState);
+        ntp_update(ntp_state);
 #endif
 
         auto end = get_absolute_time();
 
-        const auto targetTime = 1000000 / 60;
+        const auto target_time = 1000000 / 60;
         auto elapsed = absolute_time_diff_us(start, end);
 
-        if(elapsed < targetTime)
-            sleep_us(targetTime - elapsed);
+        if(elapsed < target_time)
+            sleep_us(target_time - elapsed);
     }
 }
