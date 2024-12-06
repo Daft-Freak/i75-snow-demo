@@ -16,6 +16,10 @@
 
 #include "hub75.hpp"
 
+// for sunrise/set times, rounded
+static const float latitude = 55.0f;
+static const float longitude = -1.6f;
+
 #ifdef MATRIX_2X2
 const int screen_width = 64;
 const int screen_height = 64;
@@ -74,6 +78,40 @@ static int spawn_timer = 0, spawn_time = 30;
 static int melt_timer = 0;
 
 static uint8_t snow_cover[screen_width * max_snow_depth]{};
+
+static time_t last_sunrise_sunset_update = 0;
+
+static std::tuple<time_t, time_t> calc_sunrise_sunset(time_t time, float lat, float lng, float elevation = 0.0f) {
+    // https://en.wikipedia.org/wiki/Sunrise_equation
+
+    auto deg_to_rad = [](double d) {return d * (M_PI / 180.0);};
+
+    // calc julian day
+    double julian_date = time / 86400.0 + 2440587.5;
+    double julian_day = std::ceil(julian_date - (2451545.0 + 0.0009) + 69.184 / 86400.0);
+
+    double mean_solar_time = julian_day + 0.0009 - (lng / 360.0);
+    double solar_mean_anomaly = std::fmod(357.5291 + 0.98560028 * mean_solar_time, 360.0);
+    double solar_mean_anomaly_rad = deg_to_rad(solar_mean_anomaly);
+    double equ_of_Center = 1.9148 * std::sin(solar_mean_anomaly_rad) + 0.02 * std::sin(2.0 * solar_mean_anomaly_rad) + 0.0003 * std::sin(3.0 * solar_mean_anomaly_rad);
+    double ecliptic_longitude = std::fmod(solar_mean_anomaly + equ_of_Center + 180.0 + 102.9372, 360.0);
+    double ecliptic_longitude_rad = deg_to_rad(ecliptic_longitude);
+    double solar_transit = 2451545.0 + mean_solar_time + 0.0053 * std::sin(solar_mean_anomaly_rad) - 0.0069 * std::sin(2.0 * ecliptic_longitude_rad);
+    double sin_declination_of_sun = std::sin(ecliptic_longitude_rad) * std::sin(deg_to_rad((23.4397)));
+    double cos_declination_of_sun = std::cos(std::asin(sin_declination_of_sun));
+    double hour_angle = std::acos(
+        (std::sin(deg_to_rad(-0.833 - 2.076 * std::sqrt(elevation) / 60.0)) - std::sin(deg_to_rad(lat)) * sin_declination_of_sun)
+        / (std::cos(deg_to_rad(lat)) * cos_declination_of_sun)
+    );
+
+    double julian_rise = solar_transit - hour_angle / (M_PI * 2.0);
+    double julian_set = solar_transit + hour_angle / (M_PI * 2.0);
+
+    time_t rise_time = (julian_rise - 2440587.5) * 86400.0;
+    time_t set_time = (julian_set - 2440587.5) * 86400.0;
+
+    return {rise_time, set_time};
+}
 
 static void map_coord(int &x, int &y)
 {
@@ -276,6 +314,23 @@ int main() {
         // sun/moon
         datetime_t time;
         rtc_get_datetime(&time);
+
+        time_t cur_time;
+        if(datetime_to_time(&time, &cur_time) && cur_time - last_sunrise_sunset_update > 12 * 60 * 60) {
+            // update sunrise/set times every 12h
+            auto times = calc_sunrise_sunset(cur_time, latitude, longitude);
+
+            datetime_t tmp_datetime;
+    
+            time_to_datetime(std::get<0>(times), &tmp_datetime);
+            sunrise_time_mins = tmp_datetime.hour * 60 + tmp_datetime.min;
+
+            time_to_datetime(std::get<1>(times), &tmp_datetime);
+            sunset_time_mins = tmp_datetime.hour * 60 + tmp_datetime.min;
+
+            printf("set sunrise to %02i:%02i, sunset to %02i:%02i\n", sunrise_time_mins / 60, sunrise_time_mins % 60, tmp_datetime.hour, tmp_datetime.min);
+            last_sunrise_sunset_update = cur_time;
+        }
 
         int time_mins = time.hour * 60 + time.min; // 1440 should be enough
 
