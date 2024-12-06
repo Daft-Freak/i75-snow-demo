@@ -87,6 +87,23 @@ static void map_coord(int &x, int &y)
 #endif
 }
 
+static void draw_mapped_circle(int x, int y, int r) {
+#ifdef MATRIX_2X2
+    if(y - r < 32)
+        graphics.circle({x, y}, r);
+
+    if(y + r >= 32)
+    {
+        // adjust coord to force map
+        int mx = x, my = y + r;
+        map_coord(mx, my);
+        graphics.circle({mx, my + r}, r);
+    }
+#else
+    graphics.circle({x, y}, r);
+#endif
+}
+
 int main() {
     stdio_init_all();
 
@@ -121,6 +138,9 @@ int main() {
     std::uniform_int_distribution sizeDistribution(0, 3), 
                                   velDistribution(-1024, 1024),
                                   colDistribution(0x40, 0xFF);
+
+    int sunrise_time_mins = 8 * 60 + 16;
+    int sunset_time_mins = 15 * 60 + 41;
 
     while (true) {
         auto start = get_absolute_time();
@@ -253,6 +273,46 @@ int main() {
         graphics.set_pen(0, 0, 0);
         graphics.clear();
 
+        // sun/moon
+        datetime_t time;
+        rtc_get_datetime(&time);
+
+        int time_mins = time.hour * 60 + time.min; // 1440 should be enough
+
+        int sun_radius = screen_width / 10;
+        int moon_radius = screen_width / 16;
+        int sun_margin = 2;
+
+        float day_len = sunset_time_mins - sunrise_time_mins;
+        float night_len = (24 * 60) - day_len;
+
+        float sun_y, moon_y;
+        if(time_mins < sunrise_time_mins) // before sunrise
+            sun_y = -std::sin((time_mins + (24 * 60) - sunset_time_mins) / night_len * M_PI);
+        else if(time_mins > sunset_time_mins) // after sunset
+            sun_y = -std::sin((time_mins - sunset_time_mins) / night_len * M_PI);
+        else
+            sun_y = std::sin((time_mins - sunrise_time_mins) / day_len * M_PI);
+
+        int y_range = screen_height - (sun_radius + sun_margin);
+        moon_y = screen_height + (sun_y * y_range);
+        sun_y = screen_height - (sun_y * y_range);
+    
+        int x = sun_radius + sun_margin;
+        int y = sun_y;
+        map_coord(x, y);
+
+        graphics.set_pen(255, 255, 0);
+        draw_mapped_circle(x, y, sun_radius);
+
+        x = screen_width - (sun_radius + sun_margin);
+        y = moon_y;
+        map_coord(x, y);
+
+        graphics.set_pen(100, 100, 150);
+        draw_mapped_circle(x, y, moon_radius);
+
+        // falling snow
         for(int i = 0; i < active_snow; i++)
         {
             auto &snowflake = snow[i];
@@ -299,7 +359,11 @@ int main() {
                 
                 uint8_t g = snow_cover[x + y * screen_width];
 
+                if(!g)
+                    continue;
+
                 // snow already here
+                // FIXME: this is pretty nasty, especially now that we draw things other than snow
                 if(((uint8_t *)graphics.frame_buffer)[(scrX + scrY * graphics.bounds.w) * 4] > g) 
                     continue;
 
